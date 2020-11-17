@@ -105,18 +105,15 @@ func TournamentAddAttempt(ctx context.Context, logger *zap.Logger, db *sql.DB, c
 		return ErrTournamentNotFound
 	}
 
-	expiryTime := int64(0)
-	if leaderboard.ResetSchedule != nil {
-		expiryTime = leaderboard.ResetSchedule.Next(time.Now().UTC()).UTC().Unix()
-		if leaderboard.EndTime > 0 && expiryTime > leaderboard.EndTime {
-			expiryTime = leaderboard.EndTime
-		}
-	}
+	_, _, expiryTime := calculateTournamentDeadlines(leaderboard.StartTime, leaderboard.EndTime, int64(leaderboard.Duration), leaderboard.ResetSchedule, time.Now().UTC())
 
 	query := `UPDATE leaderboard_record SET max_num_score = (max_num_score + $1) WHERE leaderboard_id = $2 AND owner_id = $3 AND expiry_time = $4`
-	_, err := db.ExecContext(ctx, query, count, leaderboardId, owner, time.Unix(expiryTime, 0).UTC())
+	result, err := db.ExecContext(ctx, query, count, leaderboardId, owner, time.Unix(expiryTime, 0).UTC())
+	affectedRows, _ := result.RowsAffected()
 	if err != nil {
 		logger.Error("Could not increment max attempt counter", zap.Error(err))
+	} else if affectedRows < 1 {
+		logger.Info("Max attempt count was not increased", zap.String("owner", owner), zap.String("leaderboard_id", leaderboardId), zap.Int64("expiry_time", expiryTime))
 	} else {
 		logger.Info("Max attempt count was increased", zap.Int("new_count", count), zap.String("owner", owner), zap.String("leaderboard_id", leaderboardId))
 	}
