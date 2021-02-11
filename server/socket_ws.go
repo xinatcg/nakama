@@ -24,7 +24,7 @@ import (
 	"strconv"
 )
 
-func NewSocketWsAcceptor(logger *zap.Logger, config Config, sessionRegistry SessionRegistry, matchmaker Matchmaker, tracker Tracker, metrics *Metrics, runtime *Runtime, jsonpbMarshaler *jsonpb.Marshaler, jsonpbUnmarshaler *jsonpb.Unmarshaler, pipeline *Pipeline) func(http.ResponseWriter, *http.Request) {
+func NewSocketWsAcceptor(logger *zap.Logger, config Config, sessionRegistry SessionRegistry, statusRegistry *StatusRegistry, matchmaker Matchmaker, tracker Tracker, metrics *Metrics, runtime *Runtime, jsonpbMarshaler *jsonpb.Marshaler, jsonpbUnmarshaler *jsonpb.Unmarshaler, pipeline *Pipeline) func(http.ResponseWriter, *http.Request) {
 	upgrader := &websocket.Upgrader{
 		ReadBufferSize:  config.GetSocket().ReadBufferSizeBytes,
 		WriteBufferSize: config.GetSocket().WriteBufferSizeBytes,
@@ -81,7 +81,7 @@ func NewSocketWsAcceptor(logger *zap.Logger, config Config, sessionRegistry Sess
 		metrics.CountWebsocketOpened(1)
 
 		// Wrap the connection for application handling.
-		session := NewSessionWS(logger, config, format, sessionID, userID, username, vars, expiry, clientIP, clientPort, jsonpbMarshaler, jsonpbUnmarshaler, conn, sessionRegistry, matchmaker, tracker, metrics, pipeline, runtime)
+		session := NewSessionWS(logger, config, format, sessionID, userID, username, vars, expiry, clientIP, clientPort, jsonpbMarshaler, jsonpbUnmarshaler, conn, sessionRegistry, statusRegistry, matchmaker, tracker, metrics, pipeline, runtime)
 
 		// Add to the session registry.
 		sessionRegistry.Add(session)
