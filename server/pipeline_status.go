@@ -44,6 +44,10 @@ func (p *Pipeline) statusFollow(logger *zap.Logger, session Session, envelope *r
 			}}}, true)
 			return
 		}
+		if userID == session.UserID() {
+			// The user cannot follow themselves.
+			continue
+		}
 
 		uniqueUserIDs[userID] = struct{}{}
 	}
@@ -59,8 +63,19 @@ func (p *Pipeline) statusFollow(logger *zap.Logger, session Session, envelope *r
 			}}}, true)
 			return
 		}
+		if username == session.Username() {
+			// The user cannot follow themselves.
+			continue
+		}
 
 		uniqueUsernames[username] = struct{}{}
+	}
+
+	if len(uniqueUserIDs) == 0 && len(uniqueUsernames) == 0 {
+		session.Send(&rtapi.Envelope{Cid: envelope.Cid, Message: &rtapi.Envelope_Status{Status: &rtapi.Status{
+			Presences: make([]*rtapi.UserPresence, 0),
+		}}}, true)
+		return
 	}
 
 	var followUserIDs map[uuid.UUID]struct{}
@@ -152,6 +167,10 @@ func (p *Pipeline) statusFollow(logger *zap.Logger, session Session, envelope *r
 				}}}, true)
 				return
 			}
+			if uid == session.UserID() {
+				// The user cannot follow themselves.
+				continue
+			}
 
 			followUserIDs[uid] = struct{}{}
 		}
@@ -206,6 +225,10 @@ func (p *Pipeline) statusUnfollow(logger *zap.Logger, session Session, envelope 
 				Message: "Invalid user identifier",
 			}}}, true)
 			return
+		}
+		if userID == session.UserID() {
+			// The user cannot unfollow themselves.
+			continue
 		}
 		userIDs = append(userIDs, userID)
 	}

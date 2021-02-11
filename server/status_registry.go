@@ -183,7 +183,12 @@ func (s *StatusRegistry) Unfollow(sessionID uuid.UUID, userIDs []uuid.UUID) {
 		s.Unlock()
 		return
 	}
-	for userID, _ := range sessionFollows {
+	for _, userID := range userIDs {
+		if _, wasFollowed := sessionFollows[userID]; !wasFollowed {
+			// Unfollowing a user that was not followed is a no-op.
+			continue
+		}
+
 		if userFollowers := s.byUser[userID]; len(userFollowers) == 1 {
 			delete(s.byUser, userID)
 		} else {
@@ -192,6 +197,7 @@ func (s *StatusRegistry) Unfollow(sessionID uuid.UUID, userIDs []uuid.UUID) {
 
 		if len(sessionFollows) == 1 {
 			delete(s.bySession, sessionID)
+			break
 		} else {
 			delete(sessionFollows, userID)
 		}
