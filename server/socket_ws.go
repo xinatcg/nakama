@@ -86,19 +86,22 @@ func NewSocketWsAcceptor(logger *zap.Logger, config Config, sessionRegistry Sess
 		// Add to the session registry.
 		sessionRegistry.Add(session)
 
-		// Register initial presences for this session.
-		ops := make([]*TrackerOp, 0, 2)
-		ops = append(ops, &TrackerOp{
-			Stream: PresenceStream{Mode: StreamModeNotifications, Subject: session.UserID()},
-			Meta:   PresenceMeta{Format: session.Format(), Username: session.Username(), Hidden: true},
-		})
+		// Register initial status tracking and presence(s) for this session.
+		statusRegistry.Follow(sessionID, map[uuid.UUID]struct{}{userID: {}})
 		if status {
-			ops = append(ops, &TrackerOp{
-				Stream: PresenceStream{Mode: StreamModeStatus, Subject: session.UserID()},
-				Meta:   PresenceMeta{Format: session.Format(), Username: session.Username(), Status: ""},
-			})
+			// Both notification and status presence.
+			tracker.TrackMulti(session.Context(), sessionID, []*TrackerOp{{
+				Stream: PresenceStream{Mode: StreamModeNotifications, Subject: userID},
+				Meta:   PresenceMeta{Format: format, Username: username, Hidden: true},
+			},
+				{
+					Stream: PresenceStream{Mode: StreamModeStatus, Subject: userID},
+					Meta:   PresenceMeta{Format: format, Username: username, Status: ""},
+				}}, userID, true)
+		} else {
+			// Only notification presence.
+			tracker.Track(session.Context(), sessionID, PresenceStream{Mode: StreamModeNotifications, Subject: userID}, userID, PresenceMeta{Format: format, Username: username, Hidden: true}, true)
 		}
-		tracker.TrackMulti(session.Context(), session.ID(), ops, session.UserID(), true)
 
 		// Allow the server to begin processing incoming messages from this session.
 		session.Consume()
