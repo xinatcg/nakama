@@ -15,7 +15,6 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/base64"
@@ -40,13 +39,13 @@ var (
 	logger             = NewConsoleLogger(os.Stdout, true)
 	cfg                = NewConfig(logger)
 	protojsonMarshaler = &protojson.MarshalOptions{
-		EnumsAsInts:  true,
-		EmitDefaults: false,
-		Indent:       "",
-		OrigName:     true,
+		Indent:          "",
+		UseProtoNames:   true,
+		UseEnumNumbers:  true,
+		EmitUnpopulated: false,
 	}
 	protojsonUnmarshaler = &protojson.UnmarshalOptions{
-		AllowUnknownFields: false,
+		DiscardUnknown: true,
 	}
 	metrics = NewMetrics(logger, logger, cfg)
 	_       = CheckConfig(logger, cfg)
@@ -104,7 +103,7 @@ func (d *DummySession) Send(envelope *rtapi.Envelope, reliable bool) error {
 }
 func (d *DummySession) SendBytes(payload []byte, reliable bool) error {
 	envelope := &rtapi.Envelope{}
-	protojsonUnmarshaler.Unmarshal(bytes.NewReader(payload), envelope)
+	protojsonUnmarshaler.Unmarshal(payload, envelope)
 	d.messages = append(d.messages, envelope)
 	return nil
 }
