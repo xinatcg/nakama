@@ -17,6 +17,7 @@ package migrate
 import (
 	"database/sql"
 	"embed"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/jackc/pgconn"
@@ -187,7 +188,8 @@ func Parse(args []string, tmpLogger *zap.Logger) {
 
 	var dbVersion string
 	if err = db.QueryRow("SELECT version()").Scan(&dbVersion); err != nil {
-		if e, ok := err.(*pgconn.PgError); ok && e.Code == dbErrorDatabaseDoesNotExist {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == dbErrorDatabaseDoesNotExist {
 			// Database does not exist, try to create a new one
 			logger.Info("Creating new database", zap.String("name", dbname))
 			db.Close()
