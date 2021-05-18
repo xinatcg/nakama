@@ -128,7 +128,7 @@ func main() {
 
 	// Start up server components.
 	cookie := newOrLoadCookie(config)
-	metrics := server.NewMetrics(logger, startupLogger, config)
+	metrics := server.NewMetrics(logger, startupLogger, db, config)
 	sessionRegistry := server.NewLocalSessionRegistry(metrics)
 	sessionCache := server.NewLocalSessionCache(config)
 	statusRegistry := server.NewStatusRegistry(logger, config, sessionRegistry, jsonpbMarshaler)
