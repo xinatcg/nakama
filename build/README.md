@@ -61,6 +61,12 @@ With the release generated we can create the official container image.
    ```
    cd build
    docker build "$PWD" --platform "linux/amd64" --file ./Dockerfile --build-arg commit="$(git rev-parse --short HEAD 2>/dev/null)" --build-arg version=2.1.0 -t heroiclabs/nakama:2.1.0
+
+   docker build "$PWD" --platform "linux/arm64" --file ./Dockerfile.arm64 --build-arg commit="$(git rev-parse --short HEAD 2>/dev/null)" --build-arg version=3.19.0 -t xinmeng/nakama:3.19.0
+
+   docker build "$PWD" --build-arg commit="$(git rev-parse --short HEAD)" --build-arg version=v3.19.0 -t heroiclabs/nakama:3.19.0-arm64v8 -f Dockerfile-arm64v8
+
+
    ```
 
 2. Push the image to the container registry.
